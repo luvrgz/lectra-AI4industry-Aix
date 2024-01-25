@@ -10,10 +10,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def import_data(csv_path):
+def import_data(csv_path, name):
     """To convert CSV data into pickle object"""
     df = pd.read_csv(csv_path, low_memory=False)
-    with open('..\\df.pkl', 'wb') as handle:
+    with open('..\\' + name + '.pkl', 'wb') as handle:
         pickle.dump(df, handle)
 
 
@@ -54,7 +54,7 @@ class DataManager:
     def keep_interval(self, column, min_value, max_value, show=False):
         """Il faut delete les True"""
         if show:
-            sns.histplot(data=dm.df, x=column)
+            sns.histplot(data=self.df, x=column)
             plt.show()
         df_mask_max = self.df[column] > max_value
         df_mask_min = self.df[column] < min_value
@@ -77,6 +77,13 @@ class DataManager:
         self.all_column_masks["nan_column"] = column_mask
         print("(find_nan_column) Number of deleted: ", np.count_nonzero(column_mask))
 
+    def remove_qualitatives(self, max_values=2):
+        str_columns = (self.df.dtypes == object)
+        n_obj = self.df.nunique() > max_values
+        a = np.logical_and.reduce([str_columns.values, n_obj.values])
+        column_indexs_to_delete = np.where(a)
+        self.df.drop(self.df.columns[column_indexs_to_delete], axis=1, inplace=True)
+
     def apply_column_masks(self):
         a = np.logical_or.reduce([mask.values for mask in self.all_column_masks.values()])
         column_indexs_to_delete = np.where(a)
@@ -97,29 +104,29 @@ class DataManager:
 
 if __name__ == "__main__":
     # IMPORT
-    csv_path = "lectra_dataset.csv"
-    import_data(csv_path)
-    dm = DataManager()
-    dm.load("df")
-
-    # LINES PREPROCESSING
-    dm.delete_model("VECTOR")
-    dm.check_net(margin=0)
-    dm.keep_interval("net_cutting_time_s", 5, 3600)
-    dm.keep_interval("nb_interruptions", -1, 12)
-    dm.nan_market()
-    dm.apply_line_masks()
-    dm.remove_lines_duplicata()
-
-    # COLUMN PREPROCESSING
-    dm.find_nan_column(max_empty=0.005)
-    dm.apply_column_masks()
-    dm.remove_column("serial_number")
-    dm.remove_column("start_date")
-    dm.remove_column("end_date")
-
-    # EXPORT
-    dm.df.to_csv('VIRGA.csv')
-    print()
+    csv_path = "VIRGA.csv"
+    import_data(csv_path, "virga")
+    #dm = DataManager()
+    # dm.load("df")
+#
+    # # LINES PREPROCESSING
+    # dm.delete_model("VECTOR")
+    # dm.check_net(margin=0)
+    # dm.keep_interval("net_cutting_time_s", 5, 3600)
+    # dm.keep_interval("nb_interruptions", -1, 12)
+    # dm.nan_market()
+    # dm.apply_line_masks()
+    # dm.remove_lines_duplicata()
+#
+    # # COLUMN PREPROCESSING
+    # dm.find_nan_column(max_empty=0.005)
+    # dm.apply_column_masks()
+    # dm.remove_column("serial_number")
+    # dm.remove_column("start_date")
+    # dm.remove_column("end_date")
+#
+    # # EXPORT
+    # dm.df.to_csv('VIRGA.csv')
+    # print()
 
 
